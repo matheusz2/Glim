@@ -43,4 +43,53 @@ export interface VistaSession {
 export interface ApiError {
   error: string;
   message?: string;
+}
+
+export interface ApiCell {
+  id: string;
+  userId: string;
+  emotion: string;
+  intensity: number;
+  color?: string;
+  position: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  scale?: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  rotation?: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  objects?: Array<{
+    id: string;
+    type: string;
+    position: [number, number, number];
+    rotation: [number, number, number];
+    scale: [number, number, number];
+    color: string;
+  }>;
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  };
+  updatedAt: {
+    seconds: number;
+    nanoseconds: number;
+  };
+}
+
+export interface ApiGlow {
+  type: string;
+  intensity: number;
+  timestamp: {
+    seconds: number;
+    nanoseconds: number;
+  };
+  fromCellId: string;
 } 

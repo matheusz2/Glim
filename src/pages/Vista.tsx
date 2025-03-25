@@ -1,10 +1,13 @@
 import { useEffect, useState, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, Environment, Stars, Html, Billboard } from '@react-three/drei'
-import { Cell } from '../types/api'
+import { Cell, Fragment } from '../types/cell'
 import { cellService } from '../services/cellService'
 import { useAuth } from '../contexts/AuthContext'
 import * as THREE from 'three'
+import { FragmentOrbit } from '../components/FragmentOrbit'
+import { useNavigate } from 'react-router-dom'
+import CellEnvironment from './CellEnvironment'
 
 const glowEmojis = {
   curiosity: '💠',
@@ -14,7 +17,12 @@ const glowEmojis = {
 }
 
 // Componente para a célula 3D
-const CellMesh = ({ cell, isUserCell = false }: { cell: Cell; isUserCell?: boolean }) => {
+const CellMesh = ({ cell, isUserCell = false, scale = [1, 1, 1], opacity = 1 }: { 
+  cell: Cell; 
+  isUserCell?: boolean;
+  scale?: [number, number, number];
+  opacity?: number;
+}) => {
   const meshRef = useRef<THREE.Mesh>(null)
   const [hovered, setHovered] = useState(false)
 
@@ -35,7 +43,8 @@ const CellMesh = ({ cell, isUserCell = false }: { cell: Cell; isUserCell?: boole
   return (
     <mesh
       ref={meshRef}
-      position={[cell.position.x, cell.position.y, cell.position.z]}
+      position={[cell.position[0], cell.position[1], cell.position[2]]}
+      scale={scale}
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}
       onClick={() => {
@@ -50,7 +59,7 @@ const CellMesh = ({ cell, isUserCell = false }: { cell: Cell; isUserCell?: boole
         emissive={hovered ? getEmotionColor(cell.emotion) : '#000000'}
         emissiveIntensity={hovered ? 0.5 : 0}
         transparent
-        opacity={0.8}
+        opacity={opacity}
       />
     </mesh>
   )
@@ -177,36 +186,52 @@ const Scene = ({ cells, userCell, onFocusCell }: {
   const [cameraLocked, setCameraLocked] = useState(true);
   const initialFocusRef = useRef(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [transitionPhase, setTransitionPhase] = useState<'entering' | 'inside' | 'exiting'>('entering');
 
   const focusOnUserCell = () => {
     if (userCell && controlsRef.current) {
+      // Fase 1: Preparar para entrada
+      setTransitionPhase('entering');
+      
+      // Fase 2: Animação de entrada
       const targetPosition = new THREE.Vector3(
-        userCell.position.x,
-        userCell.position.y + 5,
-        userCell.position.z
+        userCell.position[0],
+        userCell.position[1] + 5,
+        userCell.position[2]
       );
       
       controlsRef.current.object.position.copy(targetPosition);
       controlsRef.current.target.set(
-        userCell.position.x,
-        userCell.position.y,
-        userCell.position.z
+        userCell.position[0],
+        userCell.position[1],
+        userCell.position[2]
       );
       
       controlsRef.current.update();
-      setIsFocused(true);
+      
+      // Fase 3: Entrar na célula
+      setTimeout(() => {
+        setTransitionPhase('inside');
+        setIsFocused(true);
+      }, 1000);
     }
   };
 
   const unfocusFromUserCell = () => {
     if (controlsRef.current) {
+      setTransitionPhase('exiting');
+      
       const direction = new THREE.Vector3();
       controlsRef.current.object.getWorldDirection(direction);
       const currentPos = controlsRef.current.object.position.clone();
       const targetPos = currentPos.add(direction.multiplyScalar(10));
       controlsRef.current.target.copy(targetPos);
       controlsRef.current.update();
-      setIsFocused(false);
+      
+      setTimeout(() => {
+        setTransitionPhase('entering');
+        setIsFocused(false);
+      }, 1000);
     }
   };
 
@@ -232,21 +257,83 @@ const Scene = ({ cells, userCell, onFocusCell }: {
     }
   }, [userCell]);
 
+  // Efeitos visuais baseados no estado emocional
+  const getEmotionEffects = () => {
+    if (!userCell) return null;
+    
+    switch (userCell.emotion) {
+      case 'happy':
+        return {
+          skyColor: '#ffb',
+          ambientIntensity: 0.5,
+          particleCount: 1000,
+          particleColor: '#FFD700'
+        };
+      case 'excited':
+        return {
+          skyColor: '#ff6b6b',
+          ambientIntensity: 0.8,
+          particleCount: 2000,
+          particleColor: '#FF4500'
+        };
+      case 'calm':
+        return {
+          skyColor: '#98FB98',
+          ambientIntensity: 0.3,
+          particleCount: 500,
+          particleColor: '#98FB98'
+        };
+      default:
+        return {
+          skyColor: '#334',
+          ambientIntensity: 0.2,
+          particleCount: 800,
+          particleColor: '#646cff'
+        };
+    }
+  };
+
+  const effects = getEmotionEffects();
+
   return (
     <>
-      <ambientLight intensity={0.2} />
+      <ambientLight intensity={effects?.ambientIntensity || 0.2} />
       <pointLight position={[10, 10, 10]} intensity={0.5} />
+      
+      {/* Efeitos de partículas baseados na emoção */}
       <Stars
         radius={100}
         depth={50}
-        count={5000}
+        count={effects?.particleCount || 5000}
         factor={4}
         saturation={0}
         fade
         speed={1}
       />
       
-      {userCell && <CellMesh cell={userCell} isUserCell />}
+      {/* Célula do usuário com efeitos de transição */}
+      {userCell && (
+        <group>
+          <CellMesh 
+            cell={userCell} 
+            isUserCell 
+            scale={transitionPhase === 'inside' ? [2, 2, 2] : [1, 1, 1]}
+            opacity={transitionPhase === 'inside' ? 0.5 : 1}
+          />
+          
+          {/* Fragmentos orbitais visíveis apenas quando dentro da célula */}
+          {transitionPhase === 'inside' && userCell.fragments.map((fragment) => (
+            <FragmentOrbit
+              key={fragment.id}
+              fragment={fragment}
+              orbitRadius={3}
+              orbitSpeed={0.5}
+            />
+          ))}
+        </group>
+      )}
+      
+      {/* Outras células */}
       {cells.map((cell) => (
         <CellMesh key={cell.id} cell={cell} />
       ))}
@@ -263,12 +350,28 @@ const Scene = ({ cells, userCell, onFocusCell }: {
       />
       <CameraControls enabled={!cameraLocked && !isFocused} />
       <Environment preset="night" />
+      
+      {/* Efeito de transição */}
+      {transitionPhase !== 'entering' && (
+        <Html center>
+          <div className="fixed inset-0 pointer-events-none">
+            <div 
+              className="absolute inset-0 bg-black transition-opacity duration-1000"
+              style={{ 
+                opacity: transitionPhase === 'inside' ? 0.3 : 0,
+                background: `radial-gradient(circle at center, transparent 0%, ${effects?.skyColor}22 100%)`
+              }}
+            />
+          </div>
+        </Html>
+      )}
     </>
-  )
-}
+  );
+};
 
 const Vista = () => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [cells, setCells] = useState<Cell[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -278,6 +381,7 @@ const Vista = () => {
   const focusCellRef = useRef<((shouldFocus: boolean) => void) | null>(null);
   const [showControls, setShowControls] = useState(false);
   const [isCameraFocused, setIsCameraFocused] = useState(false);
+  const [selectedCellId, setSelectedCellId] = useState<string | null>(null);
 
   useEffect(() => {
     const initializeVista = async () => {
@@ -291,9 +395,9 @@ const Vista = () => {
 
         // Depois, busca células próximas
         const nearbyCells = await cellService.getNearbyCells(
-          initialCell.position.x,
-          initialCell.position.y,
-          initialCell.position.z
+          initialCell.position[0],
+          initialCell.position[1],
+          initialCell.position[2]
         )
         console.log('Células próximas:', nearbyCells)
         setCells(nearbyCells)
@@ -310,24 +414,9 @@ const Vista = () => {
     }
   }, [user])
 
-  const handleEmotionChange = async (emotion: string) => {
+  const handleEmotionChange = (emotion: 'happy' | 'excited' | 'calm') => {
     if (userCell) {
-      try {
-        // Atualiza a célula no banco de dados
-        const updatedCell = await cellService.updateCell(userCell.id, {
-          emotion,
-          intensity: 1,
-          updatedAt: new Date().toISOString()
-        });
-        
-        // Atualiza o estado local
-        setUserCell(updatedCell);
-
-        // Envia um glow para notificar outros usuários
-        await cellService.sendGlow(userCell.id, emotion, 1);
-      } catch (err) {
-        console.error('Erro ao mudar emoção:', err);
-      }
+      cellService.updateCell(userCell.id, { emotion })
     }
   };
 
@@ -373,6 +462,11 @@ const Vista = () => {
     )
   }
 
+  if (selectedCellId) {
+    navigate(`/cell/${selectedCellId}`)
+    return null
+  }
+
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
@@ -391,6 +485,17 @@ const Vista = () => {
                 MENU
               </div>
               <div className="p-1">
+                <button
+                  onClick={() => {
+                    if (userCell) {
+                      navigate(`/cell/${userCell.id}`)
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 w-full hover:bg-white/5 rounded-md text-white text-sm transition-colors"
+                >
+                  <span className="text-blue-400">🏠</span>
+                  <span>Entrar na minha célula</span>
+                </button>
                 <button
                   onClick={() => {
                     if (focusCellRef.current) {

@@ -1,33 +1,33 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Cell } from '../types/api';
+import { Cell } from '../types/cell';
 import { cellService } from '../services/cellService';
+import { getEmotionColor } from '../utils/emotions';
 
 const Home = () => {
   const { user } = useAuth();
-  const [cells, setCells] = useState<Cell[]>([]);
+  const navigate = useNavigate();
+  const [userCells, setUserCells] = useState<Cell[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchCells = async () => {
+    const loadUserCells = async () => {
       try {
-        // Busca as células do usuário
-        const userCells = await cellService.getUserCells();
-        setCells(userCells);
+        setLoading(true);
+        const cells = await cellService.getUserCells();
+        setUserCells(cells);
       } catch (err) {
-        setError('Erro ao carregar células');
         console.error('Erro ao carregar células:', err);
+        setError('Erro ao carregar suas células');
       } finally {
         setLoading(false);
       }
     };
 
     if (user) {
-      fetchCells();
-    } else {
-      setLoading(false);
+      loadUserCells();
     }
   }, [user]);
 
@@ -81,56 +81,62 @@ const Home = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="mt-8">
-        <h2 className="text-2xl font-bold text-white">Suas Células</h2>
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {cells.map((cell) => (
-            <div key={cell.id} className="bg-card overflow-hidden shadow-lg rounded-lg border border-white/10">
-              <div className="px-4 py-5 sm:p-6">
-                <div className="flex items-center">
-                  <div
-                    className="h-12 w-12 rounded-full"
-                    style={{ backgroundColor: getEmotionColor(cell.emotion) }}
-                  />
-                  <div className="ml-4">
-                    <h3 className="text-lg font-medium text-white">
-                      {cell.emotion}
-                    </h3>
-                    <p className="text-sm text-white/70">
-                      Intensidade: {cell.intensity}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Link
-                    to={`/vista?cellId=${cell.id}`}
-                    className="text-sm font-medium text-white/70 hover:text-white transition-colors"
-                  >
-                    Visualizar
-                  </Link>
-                </div>
+    <div className="min-h-screen p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Bem-vindo ao Glim</h1>
+          <p className="text-white/70">Explore o universo de células e conecte-se com outros usuários</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="col-span-full">
+            <h2 className="text-xl font-bold text-white mb-4">Suas Células</h2>
+            {loading ? (
+              <div className="flex justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-500"></div>
               </div>
+            ) : error ? (
+              <div className="text-red-500">{error}</div>
+            ) : userCells.length === 0 ? (
+              <div className="text-white/70">Você ainda não tem células. Crie uma no Vista!</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {userCells.map((cell) => (
+                  <div
+                    key={cell.id}
+                    className="bg-card p-4 rounded-lg hover:bg-card/80 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/cell/${cell.id}`)}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-white font-medium">Célula {cell.id.slice(0, 6)}</span>
+                      <span className="text-white/70 text-sm">
+                        {new Date().toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-white/70">Emoção:</span>
+                      <span className="text-white">{cell.emotion}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-white/70">Intensidade:</span>
+                      <span className="text-white">{cell.intensity}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="col-span-full">
+            <h2 className="text-xl font-bold text-white mb-4">Células Recentes</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* ... existing cells grid ... */}
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </div>
   );
-};
-
-const getEmotionColor = (emotion: string): string => {
-  const colors: { [key: string]: string } = {
-    alegria: '#FCD34D',
-    tristeza: '#60A5FA',
-    raiva: '#F87171',
-    medo: '#A78BFA',
-    surpresa: '#34D399',
-    nojo: '#FBBF24',
-    amor: '#F472B6',
-    paz: '#9CA3AF'
-  };
-  return colors[emotion.toLowerCase()] || '#9CA3AF';
 };
 
 export default Home; 

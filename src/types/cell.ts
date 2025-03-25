@@ -1,4 +1,4 @@
-export type Emotion = 'happy' | 'excited' | 'calm'
+export type Emotion = 'happy' | 'sad' | 'angry' | 'calm' | 'excited' | 'neutral'
 
 export type FragmentType = 'text' | 'sound' | 'image' | 'video'
 
@@ -21,11 +21,11 @@ export interface AudioConfig {
 
 export interface Fragment {
   id: string
-  type: FragmentType
+  type: string
   content: string
-  emotion: Emotion
-  timestamp: Date
   position: [number, number, number]
+  rotation: [number, number, number]
+  scale: [number, number, number]
 }
 
 export interface Glow {
@@ -35,17 +35,26 @@ export interface Glow {
   fromCellId: string
 }
 
+export interface Object3D {
+  id: string
+  type: 'cube' | 'sphere' | 'cylinder'
+  position: [number, number, number]
+  rotation: [number, number, number]
+  scale: [number, number, number]
+  color: string
+}
+
 export interface Cell {
   id: string
   userId: string
   emotion: Emotion
   intensity: number
   color: string
-  fragments: Fragment[]
-  glows: Glow[]
   position: [number, number, number]
   scale: [number, number, number]
   rotation: [number, number, number]
-  lastUpdate: Date
-  audio?: AudioConfig
+  audio: AudioConfig
+  fragments: Fragment[]
+  objects: Object3D[]
+  lastUpdate: string
 } 

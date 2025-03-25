@@ -1,13 +1,26 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useParams, useNavigate, Link } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import Home from './pages/Home'
 import Vista from './pages/Vista'
 import Profile from './pages/Profile'
+import CellEnvironment from './pages/CellEnvironment'
+
+const CellEnvironmentRoute = () => {
+  const { cellId } = useParams<{ cellId: string }>()
+  const navigate = useNavigate()
+
+  if (!cellId) {
+    navigate('/')
+    return null
+  }
+
+  return <CellEnvironment cellId={cellId} onClose={() => navigate('/vista')} />
+}
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <div className="min-h-screen bg-page text-white">
           <div className="flex">
             {/* Barra lateral de navegação */}
@@ -44,13 +57,14 @@ function App() {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/vista" element={<Vista />} />
+                <Route path="/cell/:cellId" element={<CellEnvironmentRoute />} />
                 <Route path="/profile" element={<Profile />} />
               </Routes>
             </main>
           </div>
         </div>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   )
 }
 
