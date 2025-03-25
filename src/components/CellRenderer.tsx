@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { Cell, Emotion } from '../types/cell'
 import { useGlimStore } from '../store/useGlimStore'
 import { FragmentOrbit } from './FragmentOrbit'
+import { GlowEffect } from './GlowEffect'
 
 const emotionColors = {
   happy: '#FFD700',
@@ -52,6 +53,16 @@ export const CellRenderer = ({ cell, isInteractive = true }: CellRendererProps) 
 
   return (
     <group position={cell.position}>
+      {/* Renderizar Glows ativos */}
+      {cell.glows.map((glow) => (
+        <GlowEffect
+          key={`${glow.fromCellId}-${glow.timestamp.getTime()}`}
+          glow={glow}
+          targetPosition={[0, 0, 0]} // Centro da célula
+        />
+      ))}
+
+      {/* Célula principal */}
       <Trail
         width={1}
         length={trailLength}
