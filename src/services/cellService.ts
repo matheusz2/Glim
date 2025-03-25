@@ -1,35 +1,35 @@
 import { api } from './api'
-import { Cell as ApiCell, Glow as ApiGlow } from '../types/api'
-import { Cell, Glow, Object3D } from '../types/cell'
+import { ApiCell } from '../types/api'
+import { Cell, Object3D, Emotion } from '../types/cell'
 
 const mapApiCellToCell = (apiCell: ApiCell): Cell => {
   // Tratamento seguro da data
-  let lastUpdate: string
+  let lastUpdate: string;
   try {
-    const date = new Date(apiCell.updatedAt)
+    const date = new Date(apiCell.updatedAt.seconds * 1000);
     if (isNaN(date.getTime())) {
-      lastUpdate = new Date().toISOString()
+      lastUpdate = new Date().toISOString();
     } else {
-      lastUpdate = date.toISOString()
+      lastUpdate = date.toISOString();
     }
   } catch (error) {
-    lastUpdate = new Date().toISOString()
+    lastUpdate = new Date().toISOString();
   }
 
   // Mapeamento dos objetos 3D
   const objects: Object3D[] = apiCell.objects?.map(obj => ({
     id: obj.id,
     type: obj.type as 'cube' | 'sphere' | 'cylinder',
-    position: obj.position as [number, number, number],
-    rotation: obj.rotation as [number, number, number],
-    scale: obj.scale as [number, number, number],
+    position: obj.position,
+    rotation: obj.rotation,
+    scale: obj.scale,
     color: obj.color
-  })) || []
+  })) || [];
 
   return {
     id: apiCell.id,
     userId: apiCell.userId,
-    emotion: apiCell.emotion as 'happy' | 'excited' | 'calm',
+    emotion: apiCell.emotion as Emotion,
     intensity: apiCell.intensity,
     color: apiCell.color || '#646cff',
     position: [apiCell.position.x, apiCell.position.y, apiCell.position.z],
@@ -42,7 +42,7 @@ const mapApiCellToCell = (apiCell: ApiCell): Cell => {
     },
     fragments: [],
     objects
-  }
+  };
 }
 
 export const cellService = {

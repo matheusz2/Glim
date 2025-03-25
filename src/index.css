@@ -3,29 +3,50 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-primary: 100 116 255;
+    --color-secondary: 82 82 91;
+    --color-background: 17 24 39;
+    --color-card: 31 41 55;
+    --color-text: 255 255 255;
+  }
+
   body {
-    @apply bg-page text-white antialiased;
+    @apply bg-gray-900 text-white antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  * {
+    @apply border-white/10;
   }
 }
 
 @layer components {
   .btn {
-    @apply px-4 py-2 rounded-md font-medium transition-colors duration-200;
+    @apply px-4 py-2 rounded-lg font-medium transition-colors duration-200;
   }
 
   .btn-primary {
-    @apply bg-white text-black hover:bg-white/90;
+    @apply bg-blue-600 text-white hover:bg-blue-700;
   }
 
   .btn-secondary {
-    @apply bg-card text-white hover:bg-white/10;
+    @apply bg-gray-800 text-white hover:bg-gray-700;
   }
 
   .input {
-    @apply w-full px-3 py-2 bg-field border border-white/10 rounded-md text-white placeholder-white/50 focus:border-white/20 focus:ring-0;
+    @apply w-full px-3 py-2 bg-gray-800 border border-white/10 rounded-lg text-white placeholder-white/50 focus:border-white/20 focus:ring-0;
   }
 
   .card {
-    @apply bg-card rounded-lg shadow-lg border border-white/10 p-6;
+    @apply bg-gray-800 rounded-lg shadow-lg border border-white/10 p-6;
+  }
+
+  .menu-item {
+    @apply flex items-center gap-2 px-3 py-2 rounded-lg text-white hover:bg-white/5 transition-colors;
+  }
+
+  .glass-panel {
+    @apply bg-gray-800/90 backdrop-blur-sm border border-white/10 rounded-lg shadow-xl;
   }
 }

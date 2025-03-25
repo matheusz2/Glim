@@ -1,11 +1,24 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Profile from './pages/Profile'
 import Vista from './pages/Vista'
+import CellEnvironment from './pages/CellEnvironment'
 import PrivateRoute from './components/PrivateRoute'
+
+const CellEnvironmentRoute = () => {
+  const { cellId } = useParams<{ cellId: string }>()
+  const navigate = useNavigate()
+
+  if (!cellId) {
+    navigate('/')
+    return null
+  }
+
+  return <CellEnvironment cellId={cellId} onClose={() => navigate('/vista')} />
+}
 
 const AppRoutes = () => {
   return (
@@ -27,6 +40,14 @@ const AppRoutes = () => {
           element={
             <PrivateRoute>
               <Vista />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cell/:cellId"
+          element={
+            <PrivateRoute>
+              <CellEnvironmentRoute />
             </PrivateRoute>
           }
         />

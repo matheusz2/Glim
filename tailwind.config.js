@@ -10,6 +10,9 @@ module.exports = {
         'page': '#121212',
         'card': '#1a1b1e',
         'field': '#2c2d31',
+        'surface': '#1f2937',
+        'surface-light': '#374151',
+        'surface-dark': '#111827',
       },
       colors: {
         primary: {

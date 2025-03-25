@@ -22,16 +22,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const token = localStorage.getItem('@Glim:token');
-    const storedUser = localStorage.getItem('@Glim:user');
+  const loadStoredAuth = async () => {
+    try {
+      const token = localStorage.getItem('@Glim:token');
+      const storedUser = localStorage.getItem('@Glim:user');
 
-    if (token && storedUser) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(JSON.parse(storedUser));
+      if (token && storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        try {
+          // Verificar se o token ainda é válido
+          await api.get('/auth/validate');
+          setUser(parsedUser);
+        } catch (error) {
+          console.error('Token inválido:', error);
+          signOut();
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados de autenticação:', error);
+      signOut();
     }
-
+    
+    // Define loading como false apenas após toda a validação
     setLoading(false);
+  };
+
+  useEffect(() => {
+    loadStoredAuth();
   }, []);
 
   const signIn = async (email: string, password: string) => {

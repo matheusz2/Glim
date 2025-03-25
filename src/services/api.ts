@@ -2,10 +2,7 @@ import axios from 'axios';
 import { Cell, Glow, VistaSession } from '../types/api';
 
 export const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 });
 
 // Interceptor para adicionar o token de autenticação em todas as requisições
@@ -18,13 +15,12 @@ api.interceptors.request.use(
     console.log('Enviando requisição:', {
       url: config.url,
       method: config.method,
-      data: config.data,
-      headers: config.headers
+      data: config.data
     });
     return config;
   },
   (error) => {
-    console.error('Erro no interceptor de requisição:', error);
+    console.error('Erro na requisição:', error);
     return Promise.reject(error);
   }
 );
@@ -45,12 +41,6 @@ api.interceptors.response.use(
       data: error.response?.data,
       message: error.message
     });
-
-    if (error.response?.status === 401) {
-      localStorage.removeItem('@Glim:token');
-      localStorage.removeItem('@Glim:user');
-      window.location.href = '/login';
-    }
 
     // Personaliza a mensagem de erro baseado no status
     if (error.response?.status === 400) {

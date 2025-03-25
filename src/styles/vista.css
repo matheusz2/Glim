@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    @apply h-full w-full overflow-hidden m-0 p-0;
+  }
+
+  /* Estilo global para inputs */
+  input, textarea, select {
+    @apply bg-surface-light text-white;
+  }
+}
+
+@layer components {
+  /* Container principal do Vista */
+  .vista-container {
+    @apply relative w-full h-full;
+    background: linear-gradient(to bottom, #111827, #030712);
+  }
+
+  /* Container do canvas Three.js */
+  .vista-canvas-container {
+    @apply relative w-full h-full bg-opacity-30 bg-black overflow-hidden;
+  }
+
+  /* Menu lateral */
+  .vista-menu {
+    @apply absolute top-4 left-4 z-10 w-64;
+  }
+
+  /* Controles inferiores */
+  .vista-controls {
+    @apply absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-4 w-full max-w-2xl px-4;
+  }
+
+  /* Painel de vidro */
+  .glass-panel {
+    background-color: rgba(31, 41, 55, 0.5);
+    @apply backdrop-blur-md rounded-lg overflow-hidden shadow-xl border border-opacity-10 border-white;
+  }
+
+  /* Item do menu */
+  .menu-item {
+    @apply flex items-center gap-2 px-3 py-2 hover:bg-opacity-5 hover:bg-white rounded-md text-white text-sm transition-colors;
+  }
+
+  /* Input personalizado */
+  .input {
+    @apply px-4 py-2 backdrop-blur-md rounded-full text-white placeholder-white/50 outline-none transition-colors;
+    background-color: rgba(31, 41, 55, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .input:focus {
+    background-color: rgba(31, 41, 55, 0.95);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Efeito de elevação no hover */
+  .hover-lift {
+    @apply transition-transform hover:-translate-y-0.5;
+  }
+
+  /* Animação de pulso para elementos interativos */
+  .pulse {
+    animation: pulse 2s infinite;
+  }
+
+  /* Gradiente de texto */
+  .text-gradient {
+    background: linear-gradient(to right, #646cff, #52525B);
+    @apply bg-clip-text text-transparent;
+  }
+
+  /* Animação de fade para elementos que aparecem/desaparecem */
+  .fade-enter {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  .fade-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 300ms, transform 300ms;
+  }
+
+  .fade-exit {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .fade-exit-active {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 300ms, transform 300ms;
+  }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+} 

@@ -2,39 +2,54 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
 
   return (
-    <nav className="bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <Link to="/" className="flex items-center">
-              <span className="text-2xl font-bold text-primary-600">GLIM</span>
+    <nav className="bg-surface-light/50 backdrop-blur-md border-b border-white/10">
+      <div className="container-custom h-16">
+        <div className="flex items-center justify-between h-full">
+          <div className="flex items-center gap-6">
+            <Link to="/" className="flex items-center gap-3 hover-scale">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
+                <span className="text-xl">✨</span>
+              </div>
+              <span className="text-2xl font-bold text-gradient">GLIM</span>
             </Link>
           </div>
 
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
             {user ? (
               <>
-                <Link to="/profile" className="text-gray-700 hover:text-primary-600 px-3 py-2">
-                  Perfil
+                <Link 
+                  to="/profile" 
+                  className="btn btn-glass"
+                >
+                  <span className="flex items-center gap-2">
+                    <span>👤</span>
+                    Perfil
+                  </span>
                 </Link>
                 <button
-                  onClick={logout}
-                  className="ml-4 text-gray-700 hover:text-primary-600 px-3 py-2"
+                  onClick={signOut}
+                  className="btn btn-glass"
                 >
-                  Sair
+                  <span className="flex items-center gap-2">
+                    <span>👋</span>
+                    Sair
+                  </span>
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login" className="text-gray-700 hover:text-primary-600 px-3 py-2">
+                <Link 
+                  to="/login" 
+                  className="btn btn-glass"
+                >
                   Entrar
                 </Link>
                 <Link
                   to="/register"
-                  className="ml-4 bg-primary-600 text-white hover:bg-primary-700 px-4 py-2 rounded-md"
+                  className="btn btn-primary"
                 >
                   Cadastrar
                 </Link>

@@ -6,8 +6,10 @@ import { cellService } from '../services/cellService'
 import { useAuth } from '../contexts/AuthContext'
 import * as THREE from 'three'
 import { FragmentOrbit } from '../components/FragmentOrbit'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import CellEnvironment from './CellEnvironment'
+import { getEmotionColor } from '../utils/emotions'
+import '../styles/vista.css'
 
 const glowEmojis = {
   curiosity: '💠',
@@ -414,9 +416,22 @@ const Vista = () => {
     }
   }, [user])
 
-  const handleEmotionChange = (emotion: 'happy' | 'excited' | 'calm') => {
+  const handleEmotionChange = async (emotion: 'happy' | 'excited' | 'calm') => {
     if (userCell) {
-      cellService.updateCell(userCell.id, { emotion })
+      try {
+        // Atualiza no servidor
+        const updatedCell = await cellService.updateCell(userCell.id, { emotion });
+        // Atualiza o estado local
+        setUserCell(updatedCell);
+        // Atualiza a lista de células se a célula do usuário estiver nela
+        setCells(prevCells => 
+          prevCells.map(cell => 
+            cell.id === updatedCell.id ? updatedCell : cell
+          )
+        );
+      } catch (error) {
+        console.error('Erro ao atualizar emoção:', error);
+      }
     }
   };
 
@@ -440,24 +455,36 @@ const Vista = () => {
 
   if (!user) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-red-500">Você precisa estar logado para acessar o Vista</div>
+      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+        <div className="card-glass p-8 text-center">
+          <span className="text-4xl mb-4 block">🔒</span>
+          <p className="text-xl text-white/80">Você precisa estar logado para acessar o Vista</p>
+          <Link to="/login" className="btn btn-primary mt-4">Fazer Login</Link>
+        </div>
       </div>
     )
   }
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+        <div className="card-glass p-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-red-500">{error}</div>
+      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+        <div className="card-glass p-8 text-center">
+          <span className="text-4xl mb-4 block">❌</span>
+          <p className="text-xl text-red-400">{error}</p>
+          <button onClick={() => window.location.reload()} className="btn btn-primary mt-4">
+            Tentar Novamente
+          </button>
+        </div>
       </div>
     )
   }
@@ -468,154 +495,157 @@ const Vista = () => {
   }
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Cabeçalho do Vista */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white mb-2">Vista</h1>
-          <p className="text-white/70">Explore o universo de células e conecte-se com outros usuários</p>
-        </div>
-
-        {/* Container do Vista com altura fixa */}
-        <div className="relative h-[600px] bg-black/50 rounded-lg overflow-hidden">
-          {/* Menu Superior Fixo - Estilo atualizado */}
-          <div className="absolute top-4 left-4 z-10">
-            <div className="bg-[#1a1b1e] rounded-lg overflow-hidden shadow-lg">
-              <div className="px-4 py-2 bg-[#2c2d31] text-white/70 text-sm font-bold">
-                MENU
-              </div>
-              <div className="p-1">
-                <button
-                  onClick={() => {
-                    if (userCell) {
-                      navigate(`/cell/${userCell.id}`)
-                    }
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 w-full hover:bg-white/5 rounded-md text-white text-sm transition-colors"
-                >
-                  <span className="text-blue-400">🏠</span>
-                  <span>Entrar na minha célula</span>
-                </button>
-                <button
-                  onClick={() => {
-                    if (focusCellRef.current) {
-                      focusCellRef.current(!isCameraFocused);
-                      setIsCameraFocused(!isCameraFocused);
-                    }
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 w-full hover:bg-white/5 rounded-md text-white text-sm transition-colors"
-                >
-                  <span className="text-red-400">🎯</span>
-                  <span>{isCameraFocused ? 'Desfocar da célula' : 'Focar na minha célula'}</span>
-                </button>
-                <button
-                  onClick={() => setShowControls(!showControls)}
-                  className="flex items-center gap-2 px-4 py-2 w-full hover:bg-white/5 rounded-md text-white text-sm transition-colors"
-                >
-                  <span className="text-purple-400">🎮</span>
-                  <span>Controles</span>
-                </button>
-              </div>
+    <div className="h-[calc(100vh-4rem)] w-full relative">
+      <div className="absolute inset-0">
+        {/* Menu Superior */}
+        <div className="vista-menu">
+          <div className="glass-panel">
+            <div className="p-4 border-b border-white/10">
+              <h3 className="text-lg font-medium text-gradient">Menu</h3>
             </div>
-
-            {/* Painel de Controles */}
-            {showControls && (
-              <div className="mt-2 bg-[#1a1b1e] rounded-lg p-4 text-sm text-white/70">
-                <div className="mb-2 font-bold">Controles:</div>
-                <div className="space-y-1">
-                  <div>WASD / Setas - Movimento</div>
-                  <div>Espaço - Subir</div>
-                  <div>Shift - Descer</div>
-                  <div>Mouse - Olhar ao redor</div>
-                </div>
-              </div>
-            )}
+            <div className="p-2 space-y-1">
+              <button
+                onClick={() => {
+                  if (userCell) {
+                    navigate(`/cell/${userCell.id}`)
+                  }
+                }}
+                className="menu-item w-full"
+              >
+                <span className="text-blue-400">🏠</span>
+                <span>Entrar na minha célula</span>
+              </button>
+              <button
+                onClick={() => {
+                  if (focusCellRef.current) {
+                    focusCellRef.current(!isCameraFocused);
+                    setIsCameraFocused(!isCameraFocused);
+                  }
+                }}
+                className="menu-item w-full"
+              >
+                <span className="text-red-400">🎯</span>
+                <span>{isCameraFocused ? 'Desfocar da célula' : 'Focar na minha célula'}</span>
+              </button>
+              <button
+                onClick={() => setShowControls(!showControls)}
+                className="menu-item w-full"
+              >
+                <span className="text-purple-400">🎮</span>
+                <span>Controles</span>
+              </button>
+            </div>
           </div>
 
-          {/* Ambiente Three.js */}
-          <Canvas camera={{ position: [0, 0, 8] }}>
-            <Scene 
-              cells={cells} 
-              userCell={userCell} 
-              onFocusCell={(callback: (shouldFocus: boolean) => void, isFocused: boolean) => {
-                focusCellRef.current = callback;
-                setIsCameraFocused(isFocused);
-              }}
-            />
-          </Canvas>
-
-          {/* Interface de Controle Inferior */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 flex flex-col items-center gap-4 pointer-events-auto">
-            {/* Controle de Spotify */}
-            <div className="flex flex-col items-center gap-2 w-full max-w-md">
-              <div className="flex gap-2 w-full">
-                <input
-                  type="text"
-                  placeholder="Cole o link do Spotify aqui..."
-                  value={spotifyUrl}
-                  onChange={handleSpotifyUrlChange}
-                  className="flex-1 px-4 py-2 bg-secondary/20 backdrop-blur-sm rounded-full text-white placeholder-white/50 outline-none focus:bg-secondary/30"
-                />
-                <button
-                  className="px-4 py-2 bg-secondary/20 backdrop-blur-sm hover:bg-secondary/30 rounded-full text-white text-xl"
-                  onClick={toggleAudio}
-                >
-                  {isAudioActive ? '🔊' : '🔇'}
-                </button>
+          {/* Painel de Controles */}
+          {showControls && (
+            <div className="glass-panel mt-2 p-4">
+              <h3 className="text-lg font-medium text-gradient mb-3">Controles</h3>
+              <div className="space-y-2 text-sm text-white/70">
+                <div className="flex items-center gap-2">
+                  <span className="text-primary">⌨️</span>
+                  <span>WASD / Setas - Movimento</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-primary">⬆️</span>
+                  <span>Espaço - Subir</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-primary">⬇️</span>
+                  <span>Shift - Descer</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-primary">🖱️</span>
+                  <span>Mouse - Olhar ao redor</span>
+                </div>
               </div>
             </div>
+          )}
+        </div>
 
-            {/* Controles de Emoção */}
-            <div className="flex justify-center gap-4">
+        {/* Ambiente Three.js */}
+        <Canvas camera={{ position: [0, 0, 8] }}>
+          <Scene 
+            cells={cells} 
+            userCell={userCell} 
+            onFocusCell={(callback: (shouldFocus: boolean) => void, isFocused: boolean) => {
+              focusCellRef.current = callback;
+              setIsCameraFocused(isFocused);
+            }}
+          />
+        </Canvas>
+
+        {/* Interface de Controle Inferior */}
+        <div className="vista-controls">
+          {/* Controle de Spotify */}
+          <div className="glass-panel w-full p-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Cole o link do Spotify aqui..."
+                value={spotifyUrl}
+                onChange={handleSpotifyUrlChange}
+                className="input flex-1"
+              />
               <button
-                className="px-4 py-2 bg-secondary/20 backdrop-blur-sm hover:bg-secondary/30 rounded-full text-white"
-                onClick={() => handleEmotionChange('happy')}
+                className="btn btn-glass"
+                onClick={toggleAudio}
               >
-                😊 Feliz
-              </button>
-              <button
-                className="px-4 py-2 bg-secondary/20 backdrop-blur-sm hover:bg-secondary/30 rounded-full text-white"
-                onClick={() => handleEmotionChange('excited')}
-              >
-                ✨ Empolgado
-              </button>
-              <button
-                className="px-4 py-2 bg-secondary/20 backdrop-blur-sm hover:bg-secondary/30 rounded-full text-white"
-                onClick={() => handleEmotionChange('calm')}
-              >
-                😌 Calmo
+                {isAudioActive ? '🔊' : '🔇'}
               </button>
             </div>
+          </div>
 
-            {/* Controles de Glow */}
-            <div className="flex justify-center gap-4">
-              {(Object.entries(glowEmojis) as [string, string][]).map(([type, emoji]) => (
-                <button
-                  key={type}
-                  className="px-4 py-2 bg-secondary/20 backdrop-blur-sm hover:bg-secondary/30 rounded-full text-white text-xl"
-                  onClick={() => handleGlow(type)}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
+          {/* Controles de Emoção */}
+          <div className="flex justify-center gap-2">
+            <button
+              className="btn btn-glass hover-lift"
+              onClick={() => handleEmotionChange('happy')}
+            >
+              <span className="flex items-center gap-2">
+                <span>😊</span>
+                <span>Feliz</span>
+              </span>
+            </button>
+            <button
+              className="btn btn-glass hover-lift"
+              onClick={() => handleEmotionChange('excited')}
+            >
+              <span className="flex items-center gap-2">
+                <span>✨</span>
+                <span>Empolgado</span>
+              </span>
+            </button>
+            <button
+              className="btn btn-glass hover-lift"
+              onClick={() => handleEmotionChange('calm')}
+            >
+              <span className="flex items-center gap-2">
+                <span>😌</span>
+                <span>Calmo</span>
+              </span>
+            </button>
+          </div>
+
+          {/* Controles de Glow */}
+          <div className="flex justify-center gap-2">
+            {(Object.entries(glowEmojis) as [string, string][]).map(([type, emoji]) => (
+              <button
+                key={type}
+                className="btn btn-glass hover-lift"
+                onClick={() => handleGlow(type)}
+              >
+                <span className="flex items-center gap-2">
+                  <span>{emoji}</span>
+                  <span className="capitalize">{type}</span>
+                </span>
+              </button>
+            ))}
           </div>
         </div>
       </div>
     </div>
   )
-}
-
-const getEmotionColor = (emotion: string): string => {
-  const colors: Record<string, string> = {
-    happy: '#FFD700',
-    sad: '#4169E1',
-    angry: '#FF4500',
-    calm: '#98FB98',
-    excited: '#FF69B4',
-    neutral: '#808080'
-  }
-  return colors[emotion as keyof typeof colors] || colors.neutral
 }
 
 export default Vista 
