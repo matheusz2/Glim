@@ -7,6 +7,15 @@ Each user is represented by a **Living Cell** – a dynamic 3D entity that evolv
 
 ---
 
+<img
+      src="https://github.com/matheusz2/Glim/blob/master/First%20Preview.gif?raw=true"
+      alt="Preview"/>
+
+<br>
+<img
+      src="https://github.com/matheusz2/Glim/blob/master/Second%20Preview.gif?raw=true"
+      alt="Preview"/>
+
 ## 🎨 Key Features
 
 ### 🧬 Living Cell
