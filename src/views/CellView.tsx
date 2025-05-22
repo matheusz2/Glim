@@ -8,7 +8,7 @@ import { Fragment, Cell, Emotion, GlowType, SpotifyInfo } from '../types/cell'
 import { useEffect, useState } from 'react'
 
 // Célula de exemplo para desenvolvimento
-const mockCell = {
+const mockCell: Cell = {
   id: '1',
   userId: '1',
   emotion: 'excited' as const,
@@ -21,7 +21,9 @@ const mockCell = {
       content: '✨ Primeira memória',
       emotion: 'happy' as const,
       timestamp: new Date(),
-      position: [2, 0, 2] as [number, number, number]
+      position: [2, 0, 2] as [number, number, number],
+      rotation: [0, 0, 0] as [number, number, number],
+      scale: [1, 1, 1] as [number, number, number]
     },
     {
       id: '2',
@@ -29,14 +31,17 @@ const mockCell = {
       content: '🎵',
       emotion: 'calm' as const,
       timestamp: new Date(),
-      position: [-2, 0, -2] as [number, number, number]
+      position: [-2, 0, -2] as [number, number, number],
+      rotation: [0, 0, 0] as [number, number, number],
+      scale: [1, 1, 1] as [number, number, number]
     }
   ],
+  objects: [],
   glows: [],
   position: [0, 0, 0] as [number, number, number],
   scale: [1, 1, 1] as [number, number, number],
   rotation: [0, 0, 0] as [number, number, number],
-  lastUpdate: new Date(),
+  lastUpdate: new Date().toISOString(),
   audio: {
     isEnabled: true,
     volume: 0.5
@@ -67,7 +72,7 @@ export const CellView = () => {
       setCurrentCell({
         ...currentCell,
         emotion,
-        lastUpdate: new Date()
+        lastUpdate: new Date().toISOString()
       })
     }
   }
@@ -77,7 +82,7 @@ export const CellView = () => {
       const newGlow = {
         type,
         intensity: 1,
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         fromCellId: 'visitor'
       }
 
@@ -138,6 +143,7 @@ export const CellView = () => {
           cell={currentCell}
           isActive={isAudioActive && (currentCell.audio?.isEnabled ?? true)}
           audioUrl={currentCell.audio?.spotify?.previewUrl ?? currentCell.audio?.url}
+          hasYoutubeVideo={!!currentCell.youtubeVideo}
         />
       )}
 

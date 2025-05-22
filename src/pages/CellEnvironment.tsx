@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Environment, Stars, Html } from '@react-three/drei'
+import { OrbitControls, Environment, Stars, Html, useGLTF } from '@react-three/drei'
 import { Cell, Object3D } from '../types/cell'
 import { cellService } from '../services/cellService'
 import { useAuth } from '../contexts/AuthContext'
@@ -11,6 +11,66 @@ interface CellEnvironmentProps {
   onClose: () => void
 }
 
+// Componente para o modelo da TV com vídeo
+const TVModel = ({ 
+  position = [0, 0, 0] as [number, number, number], 
+  rotation = [0, 0, 0] as [number, number, number], 
+  scale = 1, 
+  youtubeUrl = '' 
+}) => {
+  const { scene } = useGLTF('/models/tv.glb')
+  
+  // Função para extrair o ID do vídeo do YouTube
+  const getYoutubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
+    const match = url.match(regExp)
+    const videoId = (match && match[2].length === 11) ? match[2] : null
+    console.log('🔍 YouTube URL:', url)
+    console.log('🎥 Video ID extraído:', videoId)
+    return videoId
+  }
+
+  const videoId = getYoutubeId(youtubeUrl)
+  
+  useEffect(() => {
+    if (videoId) {
+      console.log('📺 Iniciando reprodução do vídeo:', videoId)
+    }
+  }, [videoId])
+  
+  return (
+    <group position={position} rotation={rotation} scale={scale}>
+      <primitive object={scene} />
+      {videoId && (
+        <Html
+          transform
+          position={[-0.2, 4.8, 0] as [number, number, number]}
+          rotation={[0, 0, 0] as [number, number, number]}
+          scale={[0.75, 0.69, 1] as [number, number, number]}
+          style={{
+            width: '640px',
+            height: '360px',
+            background: 'black',
+            borderRadius: '4px',
+            overflow: 'hidden',
+            boxShadow: '0 0 16px #000a'
+          }}
+        >
+          <iframe
+            width="100%"
+            height="100%"
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&controls=0&showinfo=0&rel=0`}
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            onLoad={() => console.log('🎬 iframe carregado para o vídeo:', videoId)}
+          />
+        </Html>
+      )}
+    </group>
+  )
+}
+
 const CellEnvironment = ({ cellId, onClose }: CellEnvironmentProps) => {
   const { user } = useAuth()
   const [cell, setCell] = useState<Cell | null>(null)
@@ -19,6 +79,7 @@ const CellEnvironment = ({ cellId, onClose }: CellEnvironmentProps) => {
   const [selectedObject, setSelectedObject] = useState<string | null>(null)
   const [objects, setObjects] = useState<Object3D[]>([])
   const [hasChanges, setHasChanges] = useState(false)
+  const [youtubeUrl, setYoutubeUrl] = useState('')
 
   useEffect(() => {
     const loadCell = async () => {
@@ -45,7 +106,7 @@ const CellEnvironment = ({ cellId, onClose }: CellEnvironmentProps) => {
     }
   }, [user, cellId])
 
-  const addObject = (type: 'cube' | 'sphere' | 'cylinder') => {
+  const addObject = (type: 'cube' | 'sphere' | 'cylinder' | 'tv') => {
     const newObject: Object3D = {
       id: Math.random().toString(36).substr(2, 9),
       type,
@@ -119,7 +180,7 @@ const CellEnvironment = ({ cellId, onClose }: CellEnvironmentProps) => {
         <div className="space-y-4">
           <div>
             <h3 className="text-sm font-bold mb-2">Adicionar Objeto</h3>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => addObject('cube')}
                 className="px-3 py-1 bg-secondary/20 hover:bg-secondary/30 rounded text-sm"
@@ -137,6 +198,12 @@ const CellEnvironment = ({ cellId, onClose }: CellEnvironmentProps) => {
                 className="px-3 py-1 bg-secondary/20 hover:bg-secondary/30 rounded text-sm"
               >
                 Cilindro
+              </button>
+              <button
+                onClick={() => addObject('tv')}
+                className="px-3 py-1 bg-secondary/20 hover:bg-secondary/30 rounded text-sm"
+              >
+                TV
               </button>
             </div>
           </div>
@@ -216,6 +283,29 @@ const CellEnvironment = ({ cellId, onClose }: CellEnvironmentProps) => {
             </div>
           )}
 
+          {selectedObject && objects.find(o => o.id === selectedObject)?.type === 'tv' && (
+            <div className="mt-4">
+              <h3 className="text-sm font-bold mb-2">Configurar TV</h3>
+              <div className="space-y-2">
+                <div>
+                  <label className="text-xs text-white/70">URL do YouTube</label>
+                  <input
+                    type="text"
+                    className="w-full px-2 py-1 bg-secondary/20 rounded text-sm"
+                    placeholder="https://youtube.com/watch?v=..."
+                    value={objects.find(o => o.id === selectedObject)?.youtubeUrl || ''}
+                    onChange={(e) => {
+                      const obj = objects.find(o => o.id === selectedObject)
+                      if (obj) {
+                        updateObject(obj.id, { youtubeUrl: e.target.value })
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {hasChanges && (
             <button
               onClick={handleSave}
@@ -254,7 +344,15 @@ const CellEnvironment = ({ cellId, onClose }: CellEnvironmentProps) => {
               {obj.type === 'cube' && <boxGeometry />}
               {obj.type === 'sphere' && <sphereGeometry />}
               {obj.type === 'cylinder' && <cylinderGeometry />}
-              <meshStandardMaterial color={obj.color} />
+              {obj.type === 'tv' && (
+                <TVModel
+                  position={obj.position}
+                  rotation={obj.rotation}
+                  scale={obj.scale[0]}
+                  youtubeUrl={obj.youtubeUrl || ''}
+                />
+              )}
+              {obj.type !== 'tv' && <meshStandardMaterial color={obj.color} />}
             </mesh>
           ))}
 

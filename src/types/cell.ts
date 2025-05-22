@@ -21,8 +21,10 @@ export interface AudioConfig {
 
 export interface Fragment {
   id: string
-  type: string
+  type: FragmentType
   content: string
+  emotion: Emotion
+  timestamp: string
   position: [number, number, number]
   rotation: [number, number, number]
   scale: [number, number, number]
@@ -31,17 +33,18 @@ export interface Fragment {
 export interface Glow {
   type: GlowType
   intensity: number
-  timestamp: Date
+  timestamp: string
   fromCellId: string
 }
 
 export interface Object3D {
   id: string
-  type: 'cube' | 'sphere' | 'cylinder'
+  type: 'cube' | 'sphere' | 'cylinder' | 'tv'
   position: [number, number, number]
   rotation: [number, number, number]
   scale: [number, number, number]
   color: string
+  youtubeUrl?: string
 }
 
 export interface Cell {
@@ -56,5 +59,7 @@ export interface Cell {
   audio: AudioConfig
   fragments: Fragment[]
   objects: Object3D[]
+  glows: Glow[]
+  youtubeVideo?: string
   lastUpdate: string
 } 
